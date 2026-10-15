@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Placement Tracker</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 30px auto; }
+        input, select, button { padding: 6px; margin: 3px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background: #f0f0f0; }
+        #summary { margin-top: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h2>Placement Tracker</h2>
+
+    <input id="company" placeholder="Company">
+    <input id="role" placeholder="Role">
+    <select id="status">
+        <option>APPLIED</option>
+        <option>TEST</option>
+        <option>INTERVIEW</option>
+        <option>OFFER</option>
+        <option>REJECTED</option>
+    </select>
+    <button id="addBtn">Add</button>
+
+    <div id="summary"></div>
+
+    <table>
+        <thead>
+            <tr><th>Company</th><th>Role</th><th>Status</th><th>Date</th><th>Action</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+    </table>
+
+<script>
+    function loadData() {
+        $.get("/api/applications", function (data) {
+            var html = "";
+            data.forEach(function (a) {
+                html += "<tr><td>" + a.company + "</td><td>" + a.role + "</td><td>" +
+                        a.status + "</td><td>" + a.appliedDate + "</td>" +
+                        "<td><button onclick='removeApp(" + a.id + ")'>Delete</button></td></tr>";
+            });
+            $("#rows").html(html);
+        });
+
+        $.get("/api/applications/summary", function (s) {
+            var text = "Summary: ";
+            for (var key in s) { text += key + " = " + s[key] + "  |  "; }
+            $("#summary").text(text);
+        });
+    }
+
+    $("#addBtn").click(function () {
+        $.ajax({
+            url: "/api/applications",
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({
+                company: $("#company").val(),
+                role: $("#role").val(),
+                status: $("#status").val()
+            }),
+            success: function () {
+                $("#company").val("");
+                $("#role").val("");
+                loadData();
+            }
+        });
+    });
+
+    function removeApp(id) {
+        $.ajax({ url: "/api/applications/" + id, method: "DELETE", success: loadData });
+    }
+
+    loadData();
+</script>
+</body>
+</html>
